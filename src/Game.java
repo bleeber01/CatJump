@@ -164,6 +164,7 @@ public class Game extends JPanel implements ActionListener, KeyListener{
             this.score++;
             scoreToList();
             o.passed();
+            updateDifficulty();
         }
     }
 
@@ -179,6 +180,11 @@ public class Game extends JPanel implements ActionListener, KeyListener{
                 n = n / 10; // removes last digit by shifting
             }
         }
+    }
+
+    public void updateDifficulty() {
+        difficulty += (int) Math.floor((double) score /5); // increase difficulty (probability of obstacle spawn) every 5 points
+        scrollSpeed += (int) Math.floor((double) score /10); // increase difficulty (speed of character) every 10 points
     }
 
     // starts the game loop
