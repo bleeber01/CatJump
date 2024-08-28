@@ -3,10 +3,10 @@ import java.awt.event.*;
 import java.util.*;
 import javax.swing.*;
 public class Character {
-    int characterX = 50;
-    int characterY = 450;
-    int width = 60;
-    int height = 50;
+    int characterX;
+    int characterY;
+    int width;
+    int height;
     int velocityY;
     int velocityX;
 

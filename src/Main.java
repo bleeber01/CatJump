@@ -15,7 +15,7 @@ public class Main {
         cityJumper.setFocusable(true);
         frame.add(cityJumper);
         frame.pack(); // with this, set dimensions are only the screen space (not including title bar)
-        cityJumper.requestFocus( );
+        cityJumper.requestFocus();
         frame.setVisible(true);
     }
 
