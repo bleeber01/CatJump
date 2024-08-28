@@ -14,8 +14,8 @@ public class Game extends JPanel implements ActionListener, KeyListener{
     //Character model
     Character cat;
 
-    //Obstacle list
-    ObstacleList obs;
+    //Obstacles
+    ObstacleList obs = new ObstacleList();
     Obstacle obstacle;
 
     //Game Logic
@@ -27,10 +27,10 @@ public class Game extends JPanel implements ActionListener, KeyListener{
     int floor = 450;
     int score = 0;
     boolean leftFoot = false;
-
-    List<Integer> scoreList = new ArrayList<>(); // reverse order of score (last digit in first index)
+    List<Integer> scoreList; // reverse order of score (last digit in first index)
 
     Game() {
+
         setPreferredSize(new Dimension(boardWidth, boardHeight)); // dimension encapsulates w and h in a single obj
         setFocusable(true);
         addKeyListener(this);
@@ -48,21 +48,16 @@ public class Game extends JPanel implements ActionListener, KeyListener{
         cat = new Character(50, 400, 60, 50, scrollSpeed);
 
         //game loop
-        Timer gameLoop = new javax.swing.Timer(1000/60, this); // delay = 60fps
-        gameLoop.start();
-
-        obs = new ObstacleList();
+        gameStart();
 
         //starts obstacle timer
         genObstacle();
 
         //starts character walking model timer
-        walk();
+        startWalk();
     }
 
-
     public void paintComponent(Graphics g) {
-        //System.out.println("draw"); // game loop debugger
         super.paintComponent(g);
         draw(g);
     }
@@ -70,13 +65,14 @@ public class Game extends JPanel implements ActionListener, KeyListener{
     public void draw(Graphics g) {
         //background
         backgroundInFrame();
-        g.drawImage(backgroundImg, this.scrollPosition += -cat.getVelocityX(), 0,null);
+        g.drawImage(backgroundImg, this.scrollPosition -= cat.getVelocityX(), 0,null);
+
+        //character
         if (leftFoot) {
             g.drawImage(characterImg, cat.getCharacterX(), cat.getCharacterY(), cat.getWidth(), cat.getHeight(), null);
         } else {
             g.drawImage(characterWalkImg, cat.getCharacterX(), cat.getCharacterY(), cat.getWidth(), cat.getHeight(), null);
         }
-
 
         // update the obstacles in list and checks for collisions between character and each obstacle
         for (int i = 0; i < obs.getSize(); i++) {
@@ -89,13 +85,21 @@ public class Game extends JPanel implements ActionListener, KeyListener{
         //score
         drawScore(g);
 
-        //g.drawImage(findNumberImg(score), 472, 10, 50, 50, null);
-
         // GameOver Screen
         if (gameOver) {
             g.drawImage(gameOverImg, 312, 35, 400, 400, null);
+            g.drawImage(characterDeadImg, cat.getCharacterX(), cat.getCharacterY(), cat.getWidth(), cat.getHeight(), null);
         }
+    }
 
+    // draws the score using images
+    public void drawScore(Graphics g) {
+        if (score < 10) {
+            g.drawImage(findNumberImg(score), 472, 10, 50, 50, null);
+        } else if (score < 100) {
+            g.drawImage(findNumberImg(scoreList.get(1)), 444, 10, 50, 50, null);
+            g.drawImage(findNumberImg(scoreList.get(0)), 500, 10, 50, 50, null);
+        }
     }
 
     // checks that the background is in frame, if false, re-frames the background by resetting the
@@ -103,21 +107,8 @@ public class Game extends JPanel implements ActionListener, KeyListener{
     public void backgroundInFrame() {
         if (scrollPosition <= boardWidth - 5120) {
             this.scrollPosition = 0;
-            //System.out.println("reframe");
         }
     }
-
-    public void drawScore(Graphics g) {
-        if (score < 10) {
-            g.drawImage(findNumberImg(score), 472, 10, 50, 50, null);
-        } else if (score < 100) {
-            System.out.println(scoreList.get(1));
-            System.out.println(scoreList.get(2));
-            g.drawImage(findNumberImg(scoreList.get(1)), 444, 10, 50, 50, null);
-            g.drawImage(findNumberImg(scoreList.get(0)), 500, 10, 50, 50, null);
-        }
-    }
-
 
     // tries to generate an obstacle pseudo-randomly (probability based) out of frame
     // every delay interval, checking that there are no other obstacles within a min distance
@@ -126,7 +117,7 @@ public class Game extends JPanel implements ActionListener, KeyListener{
         Timer obstacleInterval = new javax.swing.Timer(100, e -> {
             // this is the action listener using lambda:
 
-            int probability = Math.max(25-difficulty-10, 2); // 1 in 25 chance; increases with difficulty to a cap of 1/2
+            int probability = Math.max(20-difficulty, 2); // 1 in 20 chance base; increases with difficulty to a cap of 1/2
             Random r = new Random();
             boolean n = r.nextInt(probability) == 0;
             if (n) {
@@ -135,37 +126,16 @@ public class Game extends JPanel implements ActionListener, KeyListener{
                 if (!obs.obstacles.isEmpty()) {
                     if (outOfFrame - obs.getLast().getPosition() > minDistance) { // ensures min distance between obstacles
                         obstacle = new Obstacle(outOfFrame); // places obstacle just out of frame
-                        placeObstacle(obstacle);
+                        obs.add(obstacle);
                     }
                 } else { // no obstacles exist yet
                     obstacle = new Obstacle(outOfFrame);
-                    placeObstacle(obstacle);
+                    obs.add(obstacle);
                 }
             }
         });
         obstacleInterval.start();
     }
-
-    // adds an obstacle to the ObstacleList to be placed in the next frame update
-    public void placeObstacle(Obstacle o) {
-        obs.add(o);
-    }
-
-    public void walk(){
-        Timer walkTimer = new javax.swing.Timer(3200/scrollSpeed, new ActionListener() {
-
-            // if the character is not in the air (on the ground): switch feet and walk.
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (cat.getCharacterY() == 462) {
-                    leftFoot = !leftFoot;
-                }
-            }
-        });
-        walkTimer.start();
-
-    }
-
 
     // checks if a collision has occurred between character c and obstacle o, sets gameOver to true if collision has occurred;
     // additionally checks if the character passed the obstacle successfully
@@ -175,9 +145,9 @@ public class Game extends JPanel implements ActionListener, KeyListener{
        int h1 = 19;
         // Character hit-box
         int cHitBoxW1 = c.getCharacterX(); // x value of left edge of c's hit-box
-        int cHitBoxW2 = cHitBoxW1 + c.getWidth(); // x value of right edge of c's hit-box
+        //int cHitBoxW2 = cHitBoxW1 + c.getWidth(); // x value of right edge of c's hit-box
         int cHitBoxH1 = c.getCharacterY() - h1; // y value of bottom edge of c's hit-box
-        int cHitBoxH2 = c.getCharacterY() - c.getHeight(); // y value of top edge of c's hit-box
+        //int cHitBoxH2 = c.getCharacterY() - c.getHeight(); // y value of top edge of c's hit-box
 
        // Obstacle hit-box
        int oHitBoxW1 = o.getPosition() + w1; // x value of left edge of o's hit-box
@@ -197,23 +167,38 @@ public class Game extends JPanel implements ActionListener, KeyListener{
         }
     }
 
-    // ends the game and triggers score report
-    public void endGame() {
-        //System.out.println(score);
-    }
 
+    // stores the individual digits of int score in an array ScoreList
     public void scoreToList() {
+        this.scoreList = new ArrayList<>();
         int n = score;
         if (n != 0) {
             while (n > 0) {
-                int temp = n % 10; // extracts last digit
-                scoreList.add(temp);
-                //System.out.println(scoreList.getLast());
+                int temp = n % 10; // remainder = last digit
+                this.scoreList.add(temp);
                 n = n / 10; // removes last digit by shifting
             }
         }
     }
 
+    // starts the game loop
+    public void gameStart() {
+        Timer gameLoop = new javax.swing.Timer(1000/60, this); // delay = 60fps
+        gameLoop.start();
+    }
+
+    // starts the walking timer
+    public void startWalk(){
+        // if the character is not in the air (on the ground): switch feet and walk.
+        Timer walkTimer = new javax.swing.Timer(3200/scrollSpeed, e -> {
+            if (cat.getCharacterY() == 462) {
+                leftFoot = !leftFoot;
+            }
+        });
+        walkTimer.start();
+    }
+
+    // returns the correct number image for the given int i
     public Image findNumberImg(int i) {
         if (i == 1) {
             return oneImg;
@@ -238,16 +223,11 @@ public class Game extends JPanel implements ActionListener, KeyListener{
         }
     }
 
-
-
     @Override
     public void actionPerformed(ActionEvent e) {
-
         if (!gameOver) {
             cat.move(gravity);
             repaint();
-        } else {
-            endGame();
         }
 
     }
@@ -274,6 +254,7 @@ public class Game extends JPanel implements ActionListener, KeyListener{
     Image characterImg;
 
     Image characterWalkImg;
+    Image characterDeadImg;
     Image obstacleImg;
     Image gameOverImg;
     Image zeroImg;
@@ -288,21 +269,22 @@ public class Game extends JPanel implements ActionListener, KeyListener{
     Image nineImg;
 
     public void loadImages() {
-        backgroundImg = new ImageIcon(getClass().getResource("assets/city_background_resized.png")).getImage();
-        characterImg = new ImageIcon(getClass().getResource("assets/cat.png")).getImage();
-        characterWalkImg = new ImageIcon(getClass().getResource("assets/cat_walk.png")).getImage();
-        obstacleImg = new ImageIcon(getClass().getResource("assets/trash.png")).getImage();
-        gameOverImg = new ImageIcon(getClass().getResource("assets/gameover.png")).getImage();
-        zeroImg = new ImageIcon(getClass().getResource("assets/0.png")).getImage();
-        oneImg = new ImageIcon(getClass().getResource("assets/1.png")).getImage();
-        twoImg = new ImageIcon(getClass().getResource("assets/2.png")).getImage();
-        threeImg = new ImageIcon(getClass().getResource("assets/3.png")).getImage();
-        fourImg = new ImageIcon(getClass().getResource("assets/4.png")).getImage();
-        fiveImg = new ImageIcon(getClass().getResource("assets/5.png")).getImage();
-        sixImg = new ImageIcon(getClass().getResource("assets/6.png")).getImage();
-        sevenImg = new ImageIcon(getClass().getResource("assets/7.png")).getImage();
-        eightImg = new ImageIcon(getClass().getResource("assets/8.png")).getImage();
-        nineImg = new ImageIcon(getClass().getResource("assets/9.png")).getImage();
+        backgroundImg = new ImageIcon(Objects.requireNonNull(getClass().getResource("assets/city_background_resized.png"))).getImage();
+        characterImg = new ImageIcon(Objects.requireNonNull(getClass().getResource("assets/cat.png"))).getImage();
+        characterWalkImg = new ImageIcon(Objects.requireNonNull(getClass().getResource("assets/cat_walk.png"))).getImage();
+        characterDeadImg = new ImageIcon(Objects.requireNonNull(getClass().getResource("assets/cat_dead.png"))).getImage();
+        obstacleImg = new ImageIcon(Objects.requireNonNull(getClass().getResource("assets/trash.png"))).getImage();
+        gameOverImg = new ImageIcon(Objects.requireNonNull(getClass().getResource("assets/gameover.png"))).getImage();
+        zeroImg = new ImageIcon(Objects.requireNonNull(getClass().getResource("assets/0.png"))).getImage();
+        oneImg = new ImageIcon(Objects.requireNonNull(getClass().getResource("assets/1.png"))).getImage();
+        twoImg = new ImageIcon(Objects.requireNonNull(getClass().getResource("assets/2.png"))).getImage();
+        threeImg = new ImageIcon(Objects.requireNonNull(getClass().getResource("assets/3.png"))).getImage();
+        fourImg = new ImageIcon(Objects.requireNonNull(getClass().getResource("assets/4.png"))).getImage();
+        fiveImg = new ImageIcon(Objects.requireNonNull(getClass().getResource("assets/5.png"))).getImage();
+        sixImg = new ImageIcon(Objects.requireNonNull(getClass().getResource("assets/6.png"))).getImage();
+        sevenImg = new ImageIcon(Objects.requireNonNull(getClass().getResource("assets/7.png"))).getImage();
+        eightImg = new ImageIcon(Objects.requireNonNull(getClass().getResource("assets/8.png"))).getImage();
+        nineImg = new ImageIcon(Objects.requireNonNull(getClass().getResource("assets/9.png"))).getImage();
     }
 
 }
