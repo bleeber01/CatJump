@@ -1,3 +1,7 @@
+import entities.Character;
+import entities.Obstacle;
+import entities.ObstacleList;
+
 import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
@@ -8,29 +12,28 @@ import javax.swing.Timer;
 
 public class Game extends JPanel implements ActionListener, KeyListener{
     // Board Dimensions
-    int boardHeight = 512;
-    int boardWidth = 1024;
+    private final int boardHeight = 512;
+    private final int boardWidth = 1024;
 
-    //Character model
-    Character cat;
+    //entities.Character model
+    private Character cat;
 
     //Obstacles
-    ObstacleList obs = new ObstacleList();
-    Obstacle obstacle;
+    private final ObstacleList obs = new ObstacleList();
+    private Obstacle obstacle;
 
     //Game Logic
-    int gravity = 1;
-    int scrollSpeed = 8; // equivalent to character speed
-    int scrollPosition = 0;
-    int difficulty = 0;
-    boolean gameOver = false;
-    int floor = 450;
-    int score = 0;
-    boolean leftFoot = false;
-    List<Integer> scoreList; // reverse order of score (last digit in first index)
+    private final int gravity = 1;
+    private int scrollSpeed = 8; // equivalent to character speed
+    private int scrollPosition = 0;
+    private int difficulty = 0;
+    private boolean gameOver = false;
+    private final int floor = 450;
+    private int score = 0;
+    private boolean leftFoot = false;
+    private List<Integer> scoreList; // reverse order of score (last digit in first index)
 
-    Game() {
-
+    public Game() {
         setPreferredSize(new Dimension(boardWidth, boardHeight)); // dimension encapsulates w and h in a single obj
         setFocusable(true);
         addKeyListener(this);
@@ -40,7 +43,6 @@ public class Game extends JPanel implements ActionListener, KeyListener{
 
         // starts game timers and playable character
         startGame();
-
     }
 
     public void startGame() {
@@ -123,7 +125,7 @@ public class Game extends JPanel implements ActionListener, KeyListener{
             if (n) {
                 int outOfFrame = 1100; // out of frame distance
                 int minDistance = 500; // min distance between obstacles
-                if (!obs.obstacles.isEmpty()) {
+                if (!obs.getObstacleList().isEmpty()) {
                     if (outOfFrame - obs.getLast().getPosition() > minDistance) { // ensures min distance between obstacles
                         obstacle = new Obstacle(outOfFrame); // places obstacle just out of frame
                         obs.add(obstacle);
@@ -143,13 +145,13 @@ public class Game extends JPanel implements ActionListener, KeyListener{
         // accuracy adjusters
        int w1 = 17;
        int h1 = 19;
-        // Character hit-box
+        // entities.Character hit-box
         int cHitBoxW1 = c.getCharacterX(); // x value of left edge of c's hit-box
         //int cHitBoxW2 = cHitBoxW1 + c.getWidth(); // x value of right edge of c's hit-box
         int cHitBoxH1 = c.getCharacterY() - h1; // y value of bottom edge of c's hit-box
         //int cHitBoxH2 = c.getCharacterY() - c.getHeight(); // y value of top edge of c's hit-box
 
-       // Obstacle hit-box
+       // entities.Obstacle hit-box
        int oHitBoxW1 = o.getPosition() + w1; // x value of left edge of o's hit-box
        int oHitBoxW2 = o.getPosition() + o.getWidth() - w1; // x value of right edge of o's hit-box
        int oHitBoxH1 = floor; // y value of bottom edge of o's hit-box

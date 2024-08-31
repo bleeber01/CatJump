@@ -6,7 +6,7 @@ public class Main {
         int boardHeight = 512;
         int boardWidth = 1024;
 
-        JFrame frame = new JFrame("City Jumper");
+        JFrame frame = new JFrame("Cat Jumper");
         frame.setSize(boardWidth, boardHeight);
         frame.setResizable(false);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
